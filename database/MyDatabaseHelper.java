@@ -1,5 +1,6 @@
 package invoice.database;
 
+import invoice.beans.ApproveHours;
 import invoice.beans.Client;
 import invoice.beans.Employee;
 import invoice.beans.Project;
@@ -11,7 +12,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -119,6 +119,48 @@ public class MyDatabaseHelper {
         return projectList;
     }
 	
+	public ArrayList getProjects(String developername){
+		Connection conn=null;
+		Statement stmt=null;
+		ArrayList projectList=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            ResultSet rs = stmt.executeQuery("select p.client_number,p.project_name,p.project_number,p.project_manager_name,p.start_date,p.end_date,p.status,p.client_contact_name,p.budget from projects p, assigndevelopertoprojects adp where p.project_number=adp.project_number and adp.developer_name='"+developername+"'");
+	    		if(rs!=null){
+	    			projectList=new ArrayList();
+	    			while(rs.next()){
+	    				Project project=new Project();
+	    				project.setClient(""+rs.getInt("client_number"));
+	    				project.setProjectName(rs.getString("project_name"));
+	    				project.setProjectNumber(rs.getInt("project_number"));
+	    				project.setProjectManager(rs.getString("project_manager_name"));
+	    				project.setStateDate(rs.getString("start_date"));
+	    				project.setEndDate(rs.getString("end_date"));
+	    				project.setStatus(rs.getString("status"));
+	    				project.setClientContact(rs.getString("client_contact_name"));	    				
+	    				project.setBudget(rs.getDouble("budget"));
+	    				projectList.add(project);
+	    			}
+	    		}
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}
+        return projectList;
+    }
+	
 	public ArrayList getEmployees(){
 		Connection conn=null;
 		Statement stmt=null;
@@ -127,11 +169,12 @@ public class MyDatabaseHelper {
 			conn =getNonPooledConnection();
 			if(conn!=null){
 	            stmt = conn.createStatement( );
-	            ResultSet rs = stmt.executeQuery("select * from employees");
+	            ResultSet rs = stmt.executeQuery("select * from employees where employee_role!='Accountant'");
 	    		if(rs!=null){
 	    			employeeList=new ArrayList();
 	    			while(rs.next()){
 	    				Employee employee=new Employee();
+	    				employee.setId(""+rs.getInt("employee_id"));
 	    				employee.setName(rs.getString("user_name"));
 	    				employee.setTitle(rs.getString("title"));
 	    				employee.setRole(rs.getString("employee_role"));
@@ -191,6 +234,84 @@ public class MyDatabaseHelper {
         return employee;
     }
 	
+	public ArrayList getAllApproveProjects(){
+		Connection conn=null;
+		Statement stmt=null;
+		ArrayList approvelist=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            ResultSet rs = stmt.executeQuery("select * from developerhours where approve_status='Not Approved'");
+	    		if(rs!=null){
+	    			approvelist=new ArrayList();
+	    			while(rs.next()){
+	    				ApproveHours approve=new ApproveHours();
+	    				approve.setDeveloperhoursid(rs.getInt("developer_hours_number"));
+	    				approve.setProjectnumber(rs.getInt("project_number"));
+	    				approve.setDevelopername(rs.getString("developer_name"));
+	    				approve.setWorkdate(rs.getString("work_date"));
+	    				approve.setWorkhours(rs.getInt("worked_hours"));
+	    				approve.setApprovestatus(rs.getString("approve_status"));
+	    				approvelist.add(approve);
+	    			}
+	    		}
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}
+        return approvelist;
+    }
+	
+	public ArrayList getEmployeeReport(){
+		Connection conn=null;
+		Statement stmt=null;
+		ArrayList approvelist=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            ResultSet rs = stmt.executeQuery("select * from developerhours");
+	    		if(rs!=null){
+	    			approvelist=new ArrayList();
+	    			while(rs.next()){
+	    				ApproveHours approve=new ApproveHours();
+	    				approve.setDeveloperhoursid(rs.getInt("developer_hours_number"));
+	    				approve.setProjectnumber(rs.getInt("project_number"));
+	    				approve.setDevelopername(rs.getString("developer_name"));
+	    				approve.setWorkdate(rs.getString("work_date"));
+	    				approve.setWorkhours(rs.getInt("worked_hours"));
+	    				approve.setApprovestatus(rs.getString("approve_status"));
+	    				approvelist.add(approve);
+	    			}
+	    		}
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}
+        return approvelist;
+    }
+	
 	public void insertClient(String clientnumber,String clientname,String addressline1,String addressline2,String city,String state,String zip,String email,String contactperson,String invoicefrequency,String billingterms,String invoicegrouping){
 		Connection conn=null;
 		Statement stmt=null;
@@ -198,7 +319,147 @@ public class MyDatabaseHelper {
 			conn =getNonPooledConnection();
 			if(conn!=null){
 	            stmt = conn.createStatement( );
-	            String sql = "insert into clients (client_number,client_name,address_line1,address_line2,city,state,zip,email,contact_person,invoice_frequency,billing_terms,invoice_grouping,active_status_flag) values ("+clientnumber+",'"+clientname+"','"+addressline1+"','"+addressline2+"','"+city+"','"+state+"',"+zip+",'"+email+"','"+contactperson+"','"+invoicefrequency+"','"+billingterms+"','"+invoicegrouping+"','N')";
+	            String sql = "insert into clients (client_number,client_name,address_line1,address_line2,city,state,zip,email,contact_person,invoice_frequency,billing_terms,invoice_grouping,active_status_flag) values ("+clientnumber+",'"+clientname+"','"+addressline1+"','"+addressline2+"','"+city+"','"+state+"',"+zip+",'"+email+"','"+contactperson+"','"+invoicefrequency+"','"+billingterms+"','"+invoicegrouping+"','Y')";
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
+	public String getMaximumId(String clientname){
+		Connection conn=null;
+		Statement stmt=null;
+		String maxNumber="";
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement();
+	            String sql="";
+	            if(clientname.equalsIgnoreCase("Client")){
+	            	sql = "select max(client_number) from clients";
+	            }
+	            if(clientname.equalsIgnoreCase("Project")){
+	            	sql = "select max(project_number) from projects";
+	            }
+	            stmt = conn.createStatement( );
+	            ResultSet rs = stmt.executeQuery(sql);
+	    		if(rs!=null){
+	    			while(rs.next()){
+	    				maxNumber=""+(rs.getInt(1));
+	    			}
+	    		}
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}	
+        return maxNumber;
+    }
+	
+	public void addClient(String clientname,String addressline1,String addressline2,String city,String state,String zip,String email,String contactperson,String invoicefrequency,String billingterms,String invoicegrouping){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            int clientnumber=0;
+	            String sql = "insert into clients (client_number,client_name,address_line1,address_line2,city,state,zip,email,contact_person,invoice_frequency,billing_terms,invoice_grouping,active_status_flag) values ("+(new Integer(getMaximumId("Client")).intValue()+1)+",'"+clientname+"','"+addressline1+"','"+addressline2+"','"+city+"','"+state+"',"+zip+",'"+email+"','"+contactperson+"','"+invoicefrequency+"','"+billingterms+"','"+invoicegrouping+"','Y')";
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
+	public void updateClient(String clientnumber,String clientname,String addressline1,String addressline2,String city,String state,String zip,String email,String contactperson,String invoicefrequency,String billingterms,String invoicegrouping){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            String sql = "update clients set client_name='"+clientname+"',address_line1='"+addressline1+"',address_line2='"+addressline2+"',city='"+city+"',state='"+state+"',zip="+zip+",email='"+email+"',contact_person='"+contactperson+"',invoice_frequency='"+invoicefrequency+"',billing_terms='"+billingterms+"',invoice_grouping='"+invoicegrouping+"' where client_number="+clientnumber;
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
+	public void editAndApprove(int approveid,String hours){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            String sql = "update developerhours set worked_hours="+new Integer(hours).intValue()+",approve_status='Approved' where developer_hours_number="+approveid;
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
+	public void inactiveClient(int clientnumber){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            String sql = "update clients set active_status_flag='N' where client_number="+clientnumber;
 	            stmt.executeUpdate(sql);
 			}
         }catch(SQLException err){
@@ -241,6 +502,108 @@ public class MyDatabaseHelper {
 		}		
     }
 	
+	
+	
+	public void assignEmployee(String projectnumber,String developername){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            String sql = "insert into assigndevelopertoprojects (project_number,developer_name) values ("+projectnumber+",'"+developername+"')";
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
+	public void addProject(String clientnumber,String projectname,String startdate,String enddate,String status,String projectmanagername,String clientcontactname,String budget){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            String sql = "insert into projects (project_number,client_number,project_name,start_date,end_date,status,project_manager_name,client_contact_name,budget,active_status_flag) values ("+(new Integer(getMaximumId("Project"))+1)+","+clientnumber+",'"+projectname+"','"+startdate+"','"+enddate+"','"+status+"','"+projectmanagername+"','"+clientcontactname+"',"+budget+",'Y')";
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
+	public void updateProject(String projectnumber, String clientnumber,String projectname,String startdate,String enddate,String status,String projectmanagername,String clientcontactname,String budget){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            String sql = "update projects set client_number="+clientnumber+",project_name='"+projectname+"',start_date='"+startdate+"',end_date='"+enddate+"',status='"+status+"',project_manager_name='"+projectmanagername+"',client_contact_name='"+clientcontactname+"',budget="+budget+" where project_number="+projectnumber;
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
+	public void inactiveProject(int projectnumber){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            String sql = "update projects set active_status_flag='N' where project_number="+projectnumber;
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
 	public void insertEmployee(String name,String title,String role,String billrate){
 		Connection conn=null;
 		Statement stmt=null;
@@ -248,7 +611,107 @@ public class MyDatabaseHelper {
 			conn =getNonPooledConnection();
 			if(conn!=null){
 	            stmt = conn.createStatement( );
-	            String sql = "insert into employees (user_name,title,employee_role,bill_rate,active_status_flag) values ('"+name+"','"+title+"','"+role+"',"+billrate+",'N')";
+	            String sql = "insert into employees (user_name,title,employee_role,bill_rate,active_status_flag) values ('"+name+"','"+title+"','"+role+"',"+billrate+",'Y')";
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
+	public void updateEmployee(String id,String name,String title,String role,String billrate){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            String sql = "update employees set user_name='"+name+"',title='"+title+"',employee_role='"+role+"',bill_rate="+billrate+" where employee_id="+id;
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
+	public void inactiveEmployee(String id){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            String sql = "update employees set active_status_flag='N' where employee_id="+id;
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
+	public void insertDeveloperHours(String name,String projectname,String date,String hours){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            String sql = "insert into developerhours (project_number,developer_name,work_date,worked_hours,approve_status) values ("+projectname+",'"+name+"','"+date+"',"+hours+",'Not Approved')";
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}		
+    }
+	
+	public void assignDeveloperToProject(String projectnumber,String developername){
+		Connection conn=null;
+		Statement stmt=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            String sql = "insert into assigndevelopertoprojects (project_number,developer_name) values ("+projectnumber+",'"+developername+"')";
 	            stmt.executeUpdate(sql);
 			}
         }catch(SQLException err){
