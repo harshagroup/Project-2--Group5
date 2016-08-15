@@ -776,7 +776,7 @@ public class MyDatabaseHelper {
 			conn =getNonPooledConnection();
 			if(conn!=null){
 	            stmt = conn.createStatement( );
-	            String sql = "insert into projects (project_number,client_number,project_name,start_date,end_date,status,project_manager_name,client_contact_name,budget) values ("+projectnumber+","+clientnumber+",'"+projectname+"','"+startdate+"','"+enddate+"','"+status+"','"+projectmanagername+"','"+clientcontactname+"',"+budget+")";
+	            String sql = "insert into projects (project_number,client_number,project_name,start_date,end_date,status,project_manager_name,client_contact_name,budget,active_status_flag) values ("+projectnumber+","+clientnumber+",'"+projectname+"','"+startdate+"','"+enddate+"','"+status+"','"+projectmanagername+"','"+clientcontactname+"',"+budget+",'Y')";
 	            stmt.executeUpdate(sql);
 			}
         }catch(SQLException err){

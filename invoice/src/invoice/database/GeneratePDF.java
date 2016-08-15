@@ -29,7 +29,7 @@ public class GeneratePDF{
 		 PdfWriter documentPdfWriter = null;
 		 initializeTextSizeFonts();
 		 try {
-			 String path = "C://Users//Harsha//Desktop//"+filename;
+			 String path = "C://Users//harsha//Desktop//clientinvoices//"+filename;
 			 documentPdfWriter = PdfWriter.getInstance(document , new FileOutputStream(path));
 			 document.addAuthor("OCU");
 			 document.addCreationDate();
