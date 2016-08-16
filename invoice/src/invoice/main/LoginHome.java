@@ -29,7 +29,7 @@ public class LoginHome extends JPanel {
 		currentGUIFrame.add(label);
 		JLabel lblNewLabel = new JLabel("User Name *");
 		lblNewLabel.setBounds(175, 160, 100, 20);
-		currentGUIFrame.add(lblNewLabel);
+		currentGUIFrame.add(lblNewLabel); 
 		lblNewLabel = new JLabel("EAGLES CONSULTING COMPANY");
 		lblNewLabel.setBounds(250, 125, 200, 20);
 		currentGUIFrame.add(lblNewLabel);
