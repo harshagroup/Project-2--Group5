@@ -1,17 +1,15 @@
 package invoice.database;
 
 import invoice.beans.Client;
+import invoice.beans.DeveloperWork;
 import invoice.beans.Project;
 
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
 import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.pdf.BaseFont;
@@ -21,15 +19,15 @@ import com.itextpdf.text.pdf.PdfWriter;
 public class GeneratePDF{
 	private BaseFont font,font1;
 	private int displayPageNumber = 0;
-	public GeneratePDF(String filename,Client client,Project project,ArrayList workedDevelopers,String amount,String invoiceNumber){
-		generateClinetInvoicePDF(filename+".pdf",client,project,workedDevelopers,amount,invoiceNumber);
+	public GeneratePDF(String filename,Client client,Project project,ArrayList workedDevelopers,String amount,String invoiceNumber,String dateRange){
+		generateClinetInvoicePDF(filename+".pdf",client,project,workedDevelopers,amount,invoiceNumber,dateRange);
 	}
-	private void generateClinetInvoicePDF(String filename,Client client,Project project,ArrayList workedDevelopers,String amount,String invoiceNumber){
+	private void generateClinetInvoicePDF(String filename,Client client,Project project,ArrayList workedDevelopers,String amount,String invoiceNumber,String dateRange){
 		 Document document = new Document();
 		 PdfWriter documentPdfWriter = null;
 		 initializeTextSizeFonts();
 		 try {
-			 String path = "C://Users//harsha//Desktop//clientinvoices//"+filename;
+			 String path = "C://Users//harsha//Desktop//"+filename;
 			 documentPdfWriter = PdfWriter.getInstance(document , new FileOutputStream(path));
 			 document.addAuthor("OCU");
 			 document.addCreationDate();
@@ -43,14 +41,14 @@ public class GeneratePDF{
 			 writedata(pdfcontentByte,402,762,"Eagle Consulting Invoice");
 			 int height=0;
 			 for(int width=0;width<workedDevelopers.size();width++){
-				 String[] developinvoicedata=(String[])workedDevelopers.get(width);
+				 DeveloperWork developerWork=(DeveloperWork)workedDevelopers.get(width);
 				 if(beginPageNo){
 					 beginPageNo = false;
 					 clientinvoicedetails(document,pdfcontentByte,invoiceNumber); 
 					 pdfheaader(pdfcontentByte,client,amount,project);
 					 height=505; 
 				 }
-				 developersdata(pdfcontentByte,width,height,developinvoicedata);
+				 developersdata(pdfcontentByte,width,height,developerWork,dateRange);
 				 height=height-16;
 				 if(height<50){
 					 displaypageNumber(pdfcontentByte);
@@ -118,13 +116,13 @@ public class GeneratePDF{
 		 }
 	 }
 	 
-	 private void developersdata(PdfContentByte pdfcontentbyte,int index,int height,String[] developinvoicedata){
+	 private void developersdata(PdfContentByte pdfcontentbyte,int index,int height,DeveloperWork developerWork,String dateRange){
 		 try{
-			 createContent(pdfcontentbyte,111,height,developinvoicedata[4]+" - "+developinvoicedata[5],PdfContentByte.ALIGN_RIGHT);
-			 createContent(pdfcontentbyte,151,height,developinvoicedata[2],PdfContentByte.ALIGN_LEFT);
-			 createContent(pdfcontentbyte,401,height,developinvoicedata[6],PdfContentByte.ALIGN_LEFT);
-			 createContent(pdfcontentbyte,466,height,developinvoicedata[3],PdfContentByte.ALIGN_RIGHT);
-			 createContent(pdfcontentbyte,522,height,""+((Integer.parseInt(developinvoicedata[6])*(Integer.parseInt(developinvoicedata[3])))),PdfContentByte.ALIGN_RIGHT);
+			 createContent(pdfcontentbyte,111,height,dateRange,PdfContentByte.ALIGN_RIGHT);
+			 createContent(pdfcontentbyte,151,height,developerWork.getDeveloper_name(),PdfContentByte.ALIGN_LEFT);
+			 createContent(pdfcontentbyte,401,height,developerWork.getBillrate(),PdfContentByte.ALIGN_LEFT);
+			 createContent(pdfcontentbyte,466,height,developerWork.getSumofworked_hours(),PdfContentByte.ALIGN_RIGHT);
+			 createContent(pdfcontentbyte,522,height,""+((Integer.parseInt(developerWork.getBillrate())*(Integer.parseInt(developerWork.getSumofworked_hours())))),PdfContentByte.ALIGN_RIGHT);
 		 }catch(Exception ex){
 			 ex.printStackTrace();
 		 }
