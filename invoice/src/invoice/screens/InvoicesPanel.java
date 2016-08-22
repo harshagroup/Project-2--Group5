@@ -166,6 +166,17 @@ public class InvoicesPanel  extends JPanel {
 			});
 			reports.setBounds(430, 100, 100, 30);
 			currentGUIFrame.add(reports);
+			
+			employees = new JButton("TimeSheet");
+			employees.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					currentGUIFrame.getContentPane().removeAll();
+					currentGUIFrame.getContentPane().add(new TimeSheetPanel(currentGUIFrame,sessionManager));
+					currentGUIFrame.getContentPane().repaint();
+				}
+			});
+			employees.setBounds(535, 100, 125, 30);
+			currentGUIFrame.add(employees);
 		}
 		
 		if(sessionManager.getUserRole()!=null && sessionManager.getUserRole().equalsIgnoreCase("DEVELOPER")){
@@ -197,13 +208,7 @@ public class InvoicesPanel  extends JPanel {
 		Object columnNames[] = { "Client", "Project", "Invoice Number", "Invoice Date", "Amount"};
 		
 		final MyDatabaseHelper myDatabaseHelper=new MyDatabaseHelper();
-		ArrayList invoicelist=myDatabaseHelper.generateInvoices();
-		if(invoicelist!=null && invoicelist.size()!=0){
-			for(int count=0;count< invoicelist.size();count++){
-				Invoice invoice=(Invoice) invoicelist.get(count);
-				myDatabaseHelper.insertClientInvoices(invoice.getClientnumber(), invoice.getProjectnumber(), invoice.getAmount());
-			}
-		}
+		myDatabaseHelper.generateInvoices();
 		final ArrayList approveList=myDatabaseHelper.getInvoiceReport();
 		if(approveList!=null &&  approveList.size()!=0){			
 		rowData=new String[ approveList.size()][5];
@@ -233,20 +238,21 @@ public class InvoicesPanel  extends JPanel {
 		currentGUIFrame.add(scroll);
 		
 		
-		generateinvoiceButton = new JButton("Save Invoice PDF");
+		generateinvoiceButton = new JButton("Send Invoice PDF");
 		generateinvoiceButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ArrayList invoicelist=myDatabaseHelper.getInvoiceReport();
-				if(invoicelist!=null && invoicelist.size()!=0){
-					for(int count=0;count< invoicelist.size();count++){
-						Invoice invoice=(Invoice) invoicelist.get(count);
-						Project project=myDatabaseHelper.getProjectsByNumbers(invoice.getClientnumber(),invoice.getProjectnumber());
-						Client client=myDatabaseHelper.getClientByNumber(invoice.getClientnumber());	
-						ArrayList workedDevelopers=myDatabaseHelper.generateInvoicedevelopers(invoice.getClientnumber(),invoice.getProjectnumber());
-						GeneratePDF generatepdf=new GeneratePDF(invoice.getClientnumber()+".pdf",client,project,workedDevelopers,invoice.getAmount(),invoice.getInvoicenumber());						
-					}
-					JOptionPane.showMessageDialog(null, "Send all Clients invoices to clients contact emails");
-				}
+//				ArrayList invoicelist=myDatabaseHelper.getInvoiceReport();
+//				if(invoicelist!=null && invoicelist.size()!=0){
+//					for(int count=0;count< invoicelist.size();count++){
+//						Invoice invoice=(Invoice) invoicelist.get(count);
+//						Project project=myDatabaseHelper.getProjectsByNumbers(invoice.getClientnumber(),invoice.getProjectnumber());
+//						Client client=myDatabaseHelper.getClientByNumber(invoice.getClientnumber());	
+//						ArrayList workedDevelopers=myDatabaseHelper.generateInvoicedevelopers(invoice.getClientnumber(),invoice.getProjectnumber());
+//						GeneratePDF generatepdf=new GeneratePDF(invoice.getClientnumber()+".pdf",client,project,workedDevelopers,invoice.getAmount(),invoice.getInvoicenumber());						
+//					}
+//					JOptionPane.showMessageDialog(null, "Send all Clients invoices to clients contact emails");
+//				}
+				JOptionPane.showMessageDialog(null, "Send all Clients invoices to clients contact emails");
 			}
 		});
 		generateinvoiceButton.setBounds(175, 500, 150, 30);
