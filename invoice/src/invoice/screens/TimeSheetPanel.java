@@ -52,7 +52,7 @@ public class TimeSheetPanel extends JPanel {
 		logout.setBounds(525, 7, 75, 30);
 		currentGUIFrame.add(logout);
 		
-		lblNewLabel = new JLabel("Developer Work Time Sheet");
+		lblNewLabel = new JLabel(sessionManager.getUserRole()+" Work Time Sheet");
 		lblNewLabel.setBounds(250, 140, 200, 20);
 		currentGUIFrame.add(lblNewLabel);
 		
@@ -167,6 +167,17 @@ public class TimeSheetPanel extends JPanel {
 			});
 			reports.setBounds(430, 100, 100, 30);
 			currentGUIFrame.add(reports);
+			
+			employees = new JButton("TimeSheet");
+			employees.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					currentGUIFrame.getContentPane().removeAll();
+					currentGUIFrame.getContentPane().add(new TimeSheetPanel(currentGUIFrame,sessionManager));
+					currentGUIFrame.getContentPane().repaint();
+				}
+			});
+			employees.setBounds(535, 100, 125, 30);
+			currentGUIFrame.add(employees);
 		}
 		
 		if(sessionManager.getUserRole()!=null && sessionManager.getUserRole().equalsIgnoreCase("DEVELOPER")){
@@ -194,7 +205,13 @@ public class TimeSheetPanel extends JPanel {
 		}
 		
 		final MyDatabaseHelper myDatabaseHelper=new MyDatabaseHelper();
-		final ArrayList projectList=myDatabaseHelper.getProjects(sessionManager.getUserName());
+		ArrayList assignedProjectList=null;
+		if(sessionManager.getUserRole().equalsIgnoreCase("Project Manager")){
+			assignedProjectList=myDatabaseHelper.getProjectManagerProjects(sessionManager.getUserName());
+		}else{
+			assignedProjectList=myDatabaseHelper.getProjects(sessionManager.getUserName());
+		}
+		final ArrayList projectList=assignedProjectList;
 		lblNewLabel = new JLabel("Select Project");
 		lblNewLabel.setBounds(175, 180, 100, 20);
 		currentGUIFrame.add(lblNewLabel);
@@ -212,34 +229,118 @@ public class TimeSheetPanel extends JPanel {
 		fbillingComboScrollPane.setBounds(275, 178, 175, 25);
 		currentGUIFrame.add(fbillingComboScrollPane);
 		
-		lblNewLabel = new JLabel("Date");
-		lblNewLabel.setBounds(175, 210, 100, 20);
+		lblNewLabel = new JLabel("Monday");
+		lblNewLabel.setBounds(100, 210, 60, 20);
 		currentGUIFrame.add(lblNewLabel);
 		
 		final JTextField date= new JTextField();
-		date.setBounds(275, 208, 175, 25);		
+		date.setBounds(100, 240, 75, 25);		
 		currentGUIFrame.add(date);	
 		
 		lblNewLabel = new JLabel("Enter Hours");
-		lblNewLabel.setBounds(175, 240, 100, 20);
+		lblNewLabel.setBounds(100, 280, 100, 20);
 		currentGUIFrame.add(lblNewLabel);
 		
 		final JTextField hours= new JTextField();
-		hours.setBounds(275, 238, 175, 25);		
-		currentGUIFrame.add(hours);	
+		hours.setBounds(100, 310, 75, 25);		
+		currentGUIFrame.add(hours);
+		
+		lblNewLabel = new JLabel("Tuesday");
+		lblNewLabel.setBounds(190, 210, 60, 20);
+		currentGUIFrame.add(lblNewLabel);
+		
+		final JTextField date1= new JTextField();
+		date1.setBounds(190, 240, 75, 25);		
+		currentGUIFrame.add(date1);
+		
+		lblNewLabel = new JLabel("Enter Hours");
+		lblNewLabel.setBounds(190, 280, 100, 20);
+		currentGUIFrame.add(lblNewLabel);
+		
+		final JTextField hours1= new JTextField();
+		hours1.setBounds(190, 310, 75, 25);		
+		currentGUIFrame.add(hours1);
+		
+		lblNewLabel = new JLabel("Wednesday");
+		lblNewLabel.setBounds(280, 210, 80, 20);
+		currentGUIFrame.add(lblNewLabel);
+		
+		final JTextField date2= new JTextField();
+		date2.setBounds(280, 240, 75, 25);		
+		currentGUIFrame.add(date2);
+		
+		lblNewLabel = new JLabel("Enter Hours");
+		lblNewLabel.setBounds(280, 280, 100, 20);
+		currentGUIFrame.add(lblNewLabel);
+		
+		final JTextField hours2= new JTextField();
+		hours2.setBounds(280, 310, 75, 25);		
+		currentGUIFrame.add(hours2);
+		
+		lblNewLabel = new JLabel("Thursday");
+		lblNewLabel.setBounds(370, 210, 60, 20);
+		currentGUIFrame.add(lblNewLabel);
+		
+		final JTextField date3= new JTextField();
+		date3.setBounds(370, 240, 75, 25);		
+		currentGUIFrame.add(date3);
+		
+		lblNewLabel = new JLabel("Enter Hours");
+		lblNewLabel.setBounds(370, 280, 100, 20);
+		currentGUIFrame.add(lblNewLabel);
+		
+		final JTextField hours3= new JTextField();
+		hours3.setBounds(370, 310, 75, 25);		
+		currentGUIFrame.add(hours3);
+		
+		lblNewLabel = new JLabel("Friday");
+		lblNewLabel.setBounds(460, 210, 60, 20);
+		currentGUIFrame.add(lblNewLabel);
+		
+		final JTextField date4= new JTextField();
+		date4.setBounds(460, 240, 75, 25);		
+		currentGUIFrame.add(date4);
+		
+		lblNewLabel = new JLabel("Enter Hours");
+		lblNewLabel.setBounds(460, 280, 100, 20);
+		currentGUIFrame.add(lblNewLabel);
+		
+		final JTextField hours4= new JTextField();
+		hours4.setBounds(460, 310, 75, 25);		
+		currentGUIFrame.add(hours4);
 		
 		addButton = new JButton("Add");
 		addButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e) {
-				if(projectCombo.getItemAt(projectCombo.getSelectedIndex())!=null && (projectCombo.getItemAt(projectCombo.getSelectedIndex())).toString().trim().length()!=0 && date!=null && date.getText().trim().length()!=0 
-						&& hours!=null && hours.getText().trim().length()!=0 ){
+				if(projectCombo.getItemAt(projectCombo.getSelectedIndex())!=null && (projectCombo.getItemAt(projectCombo.getSelectedIndex())).toString().trim().length()!=0 
+						&& ((date!=null && date.getText().trim().length()!=0 && hours!=null && hours.getText().trim().length()!=0) 
+						|| (date1!=null && date1.getText().trim().length()!=0 && hours1!=null && hours1.getText().trim().length()!=0) 
+						|| (date2!=null && date2.getText().trim().length()!=0 && hours2!=null && hours2.getText().trim().length()!=0)
+						|| (date3!=null && date3.getText().trim().length()!=0 && hours3!=null && hours3.getText().trim().length()!=0)
+						|| (date4!=null && date4.getText().trim().length()!=0 && hours4!=null && hours4.getText().trim().length()!=0))){
 					MyDatabaseHelper myDatabaseHelper=new MyDatabaseHelper();
 					Project project=(Project) projectList.get(projectCombo.getSelectedIndex());
 					Employee employee=myDatabaseHelper.getEmployeeByUsername(sessionManager.getUserName());
-					myDatabaseHelper.insertDeveloperHours(sessionManager.getUserName(), (projectCombo.getItemAt(projectCombo.getSelectedIndex())).toString().trim(), date.getText().trim(), hours.getText().trim(),project.getClient(),employee.getBillrate());
+					if(date!=null && date.getText().trim().length()!=0 && hours!=null && hours.getText().trim().length()!=0){
+						myDatabaseHelper.insertDeveloperHours(sessionManager.getUserName(), (projectCombo.getItemAt(projectCombo.getSelectedIndex())).toString().trim(), date.getText().trim(), hours.getText().trim(),project.getClient(),employee.getBillrate());
+					}
+					if(date1!=null && date1.getText().trim().length()!=0 && hours1!=null && hours1.getText().trim().length()!=0){
+						myDatabaseHelper.insertDeveloperHours(sessionManager.getUserName(), (projectCombo.getItemAt(projectCombo.getSelectedIndex())).toString().trim(), date1.getText().trim(), hours1.getText().trim(),project.getClient(),employee.getBillrate());
+					}
+					if(date2!=null && date2.getText().trim().length()!=0 && hours2!=null && hours2.getText().trim().length()!=0){
+						myDatabaseHelper.insertDeveloperHours(sessionManager.getUserName(), (projectCombo.getItemAt(projectCombo.getSelectedIndex())).toString().trim(), date2.getText().trim(), hours2.getText().trim(),project.getClient(),employee.getBillrate());
+					}
+					if(date3!=null && date3.getText().trim().length()!=0 && hours3!=null && hours3.getText().trim().length()!=0){
+						myDatabaseHelper.insertDeveloperHours(sessionManager.getUserName(), (projectCombo.getItemAt(projectCombo.getSelectedIndex())).toString().trim(), date3.getText().trim(), hours3.getText().trim(),project.getClient(),employee.getBillrate());
+					}
+					if(date4!=null && date4.getText().trim().length()!=0 && hours4!=null && hours4.getText().trim().length()!=0){
+						myDatabaseHelper.insertDeveloperHours(sessionManager.getUserName(), (projectCombo.getItemAt(projectCombo.getSelectedIndex())).toString().trim(), date4.getText().trim(), hours4.getText().trim(),project.getClient(),employee.getBillrate());
+					}
 					JOptionPane.showMessageDialog(addButton, "Succeesssfully save worked hours");
-					date.setText("");
-					hours.setText("");
+					date.setText("");date1.setText("");date2.setText("");date3.setText("");date4.setText("");
+					hours.setText("");hours1.setText("");hours2.setText("");hours3.setText("");hours4.setText("");
+				}else{
+					JOptionPane.showMessageDialog(addButton, "Please enter atleast sindle date and hours");
 				}
 			}
 		});
