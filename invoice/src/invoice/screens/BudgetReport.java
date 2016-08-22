@@ -1,19 +1,13 @@
 package invoice.screens;
 
+import invoice.beans.Budget;
 import invoice.database.MyDatabaseHelper;
 import invoice.main.LoginHome;
 import invoice.main.SessionManager;
 
-import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -169,6 +163,17 @@ public class BudgetReport extends JPanel {
 			});
 			reports.setBounds(430, 100, 100, 30);
 			currentGUIFrame.add(reports);
+			
+			employees = new JButton("TimeSheet");
+			employees.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					currentGUIFrame.getContentPane().removeAll();
+					currentGUIFrame.getContentPane().add(new TimeSheetPanel(currentGUIFrame,sessionManager));
+					currentGUIFrame.getContentPane().repaint();
+				}
+			});
+			employees.setBounds(535, 100, 125, 30);
+			currentGUIFrame.add(employees);
 		}
 		
 		if(sessionManager.getUserRole()!=null && sessionManager.getUserRole().equalsIgnoreCase("DEVELOPER")){
@@ -197,40 +202,34 @@ public class BudgetReport extends JPanel {
 		
 		Object rowData[][] = { { "Row1-Column1", "Row1-Column2", "Row1-Column3", "Row1-Column4", "Row1-Column5"},
                 			   { "Row1-Column1", "Row1-Column2", "Row1-Column3", "Row1-Column4", "Row1-Column5"} };
-		Object columnNames[] = { "Client Name", "Project Name", "Acutal Budget", "Paid Budget", "Pay Budget"};
+		Object columnNames[] = { "Invoice Number", "Client Name", "Project Name", "Acutal Budget", "Paid Budget", "Pay Budget"};
 		
-		//DatabaseHelper helper=new DatabaseHelper();
-		//ArrayList studentCourseList=helper.getAllStudentCourses();
-		//if(studentCourseList!=null && studentCourseList.size()!=0){
-		//rowData=new String[studentCourseList.size()][4];
-		//for(int count=0;count<studentCourseList.size();count++){
-		//	int increment=0;
-		//	Student student=(Student)studentCourseList.get(count);
-		//	if(student!=null){
-		//		rowData[count][increment]=student.getStudentId();
-		//		increment=increment+1;
-		//		rowData[count][increment]=student.getCourseCode();
-		//		increment=increment+1;
-		//		rowData[count][increment]=student.getCourseName();
-		//		increment=increment+1;
-		//		rowData[count][increment]=student.getSemester();
-		//	}				
-		//}
-		//}
+		MyDatabaseHelper myDatabaseHelper=new MyDatabaseHelper();
+		ArrayList budgetReport=myDatabaseHelper.budgetReport();
+		if(budgetReport!=null && budgetReport.size()!=0){
+			rowData=new String[budgetReport.size()][6];
+			for(int count=0;count<budgetReport.size();count++){
+				int increment=0;
+				Budget budget=(Budget)budgetReport.get(count);
+				if(budget!=null){
+					rowData[count][increment]=budget.getInvoicenumber();
+					increment=increment+1;
+					rowData[count][increment]=budget.getClientname();
+					increment=increment+1;
+					rowData[count][increment]=budget.getProjectname();
+					increment=increment+1;
+					rowData[count][increment]=budget.getActualmoney();
+					increment=increment+1;
+					rowData[count][increment]=budget.getPaidmoney();
+					increment=increment+1;
+					myDatabaseHelper.paidprojectbudget(budget.getProjectnumber(),budget.getClientnumber(),budget.getInvoicedate());
+					rowData[count][increment]=""+(Integer.parseInt(budget.getActualmoney())-Integer.parseInt(budget.getPaidmoney()));					
+				}				
+			}
+		}
 		
 		final JTable table = new JTable(rowData, columnNames);
-		table.setRowSelectionAllowed(true);
-		ListSelectionModel cellSelectionModel = table.getSelectionModel();
-		cellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		
-		cellSelectionModel.addListSelectionListener(new ListSelectionListener() {
-			public void valueChanged(ListSelectionEvent e) {
-				String selectedData = null;
-				if(table.getSelectedRow() > -1){
-					//selectedIndex=""+table.getSelectedRow();		        	
-				}
-			}
-		});
+		table.setRowSelectionAllowed(true);		
 		JScrollPane scroll = new JScrollPane(table);
 		scroll.setBounds(50, 200, 600, 275);
 		currentGUIFrame.add(scroll);

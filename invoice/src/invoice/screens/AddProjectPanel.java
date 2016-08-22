@@ -24,7 +24,7 @@ import javax.swing.JTextField;
 
 public class AddProjectPanel extends JPanel {
 	private JButton logout;
-	private JButton company,clients,projects,employees,invoices,reports,addnewproject,back,help;
+	public JButton company,clients,projects,employees,invoices,reports,addnewproject,back,help;
 	public AddProjectPanel(final JFrame currentGUIFrame,final SessionManager sessionManager) {
 		setLayout(null);		
 		JLabel lblNewLabel = new JLabel("Welcome "+sessionManager.getUserName());
@@ -165,6 +165,17 @@ public class AddProjectPanel extends JPanel {
 			});
 			reports.setBounds(430, 100, 100, 30);
 			currentGUIFrame.add(reports);
+			
+			employees = new JButton("TimeSheet");
+			employees.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					currentGUIFrame.getContentPane().removeAll();
+					currentGUIFrame.getContentPane().add(new TimeSheetPanel(currentGUIFrame,sessionManager));
+					currentGUIFrame.getContentPane().repaint();
+				}
+			});
+			employees.setBounds(535, 100, 125, 30);
+			currentGUIFrame.add(employees);
 		}
 		
 		if(sessionManager.getUserRole()!=null && sessionManager.getUserRole().equalsIgnoreCase("DEVELOPER")){

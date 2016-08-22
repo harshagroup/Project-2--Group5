@@ -160,6 +160,17 @@ public class EmployeeReport extends JPanel {
 			});
 			reports.setBounds(430, 100, 100, 30);
 			currentGUIFrame.add(reports);
+			
+			employees = new JButton("TimeSheet");
+			employees.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					currentGUIFrame.getContentPane().removeAll();
+					currentGUIFrame.getContentPane().add(new TimeSheetPanel(currentGUIFrame,sessionManager));
+					currentGUIFrame.getContentPane().repaint();
+				}
+			});
+			employees.setBounds(535, 100, 125, 30);
+			currentGUIFrame.add(employees);
 		}
 		
 		if(sessionManager.getUserRole()!=null && sessionManager.getUserRole().equalsIgnoreCase("DEVELOPER")){
@@ -197,9 +208,9 @@ public class EmployeeReport extends JPanel {
 				Employee employee=(Employee) approveList.get(count);
 				int increment=0;
 				if(employee!=null){
-					rowData[count][increment]=employee.getRole();
-					increment=increment+1;
 					rowData[count][increment]=employee.getTitle();
+					increment=increment+1;
+					rowData[count][increment]=employee.getRole();
 					increment=increment+1;
 					rowData[count][increment]=employee.getName();
 					increment=increment+1;
