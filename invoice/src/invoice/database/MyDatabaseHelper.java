@@ -1,8 +1,10 @@
 package invoice.database;
 
 import invoice.beans.ApproveHours;
+import invoice.beans.Budget;
 import invoice.beans.Client;
 import invoice.beans.Company;
+import invoice.beans.DeveloperWork;
 import invoice.beans.Employee;
 import invoice.beans.Invoice;
 import invoice.beans.Project;
@@ -15,7 +17,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -220,6 +225,78 @@ public class MyDatabaseHelper {
         return projectList;
     }
 	
+	public ArrayList budgetReport(){
+		Connection conn=null;
+		Statement stmt=null;
+		ArrayList clientList=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            ResultSet rs = stmt.executeQuery("select c.client_name,p.project_name,ci.total_amount,p.budget,ci.invoice_number,ci.invoice_generate_date,ci.client_number,ci.project_number from client_invoices ci,clients c,projects p where c.client_number=ci.client_number and p.project_number=ci.project_number");
+	    		if(rs!=null){
+	    			clientList=new ArrayList();
+	    			while(rs.next()){
+	    				Budget budget=new Budget();
+	    				budget.setClientname(rs.getString("client_name"));
+	    				budget.setProjectname(rs.getString("project_name"));
+	    				budget.setActualmoney(rs.getString("budget"));
+	    				budget.setInvoicenumber(rs.getString("invoice_number"));
+	    				budget.setPaidmoney(rs.getString("total_amount"));
+	    				budget.setInvoicedate(rs.getString("invoice_generate_date"));
+	    				budget.setClientnumber(rs.getString("client_number"));
+	    				budget.setProjectnumber(rs.getString("project_number"));
+	    				clientList.add(budget);
+	    			}
+	    		}
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}
+        return clientList;
+    }
+	
+	public String paidprojectbudget(String projectnumber,String clientnumber,String date){
+		Connection conn=null;
+		Statement stmt=null;
+		String totalspentamount=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            ResultSet rs = stmt.executeQuery("select sum(total_amount) from client_invoices where client_number="+clientnumber+" and project_number="+projectnumber+" and STR_TO_DATE(invoice_generate_date,'%d-%m-%Y') <= STR_TO_DATE('"+date+"', '%d-%m-%Y')");
+	    		if(rs!=null){
+	    			while(rs.next()){
+	    				totalspentamount=rs.getString("sum(total_amount)");
+	    			}
+	    		}
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}
+        return totalspentamount;
+    }
+	
 	public Project getProjectsByNumbers(String clientnumber,String projectnumber){
 		Connection conn=null;
 		Statement stmt=null;
@@ -269,6 +346,48 @@ public class MyDatabaseHelper {
 			if(conn!=null){
 	            stmt = conn.createStatement( );
 	            ResultSet rs = stmt.executeQuery("select p.client_number,p.project_name,p.project_number,p.project_manager_name,p.start_date,p.end_date,p.status,p.client_contact_name,p.budget from projects p, assigndevelopertoprojects adp where p.client_number=adp.client_number and p.project_number=adp.project_number and adp.developer_name='"+developername+"' and p.active_status_flag='Y'");
+	    		if(rs!=null){
+	    			projectList=new ArrayList();
+	    			while(rs.next()){
+	    				Project project=new Project();
+	    				project.setClient(""+rs.getInt("client_number"));
+	    				project.setProjectName(rs.getString("project_name"));
+	    				project.setProjectNumber(rs.getInt("project_number"));
+	    				project.setProjectManager(rs.getString("project_manager_name"));
+	    				project.setStateDate(rs.getString("start_date"));
+	    				project.setEndDate(rs.getString("end_date"));
+	    				project.setStatus(rs.getString("status"));
+	    				project.setClientContact(rs.getString("client_contact_name"));	    				
+	    				project.setBudget(rs.getDouble("budget"));
+	    				projectList.add(project);
+	    			}
+	    		}
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}
+        return projectList;
+    }
+	
+	public ArrayList getProjectManagerProjects(String projectmanagerName){
+		Connection conn=null;
+		Statement stmt=null;
+		ArrayList projectList=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement( );
+	            ResultSet rs = stmt.executeQuery("select * from projects where project_manager_name='"+projectmanagerName+"' and active_status_flag='Y'");
 	    		if(rs!=null){
 	    			projectList=new ArrayList();
 	    			while(rs.next()){
@@ -568,8 +687,401 @@ public class MyDatabaseHelper {
         return invoicelist;
     }
 	
-	public ArrayList generateInvoices(){
+	public ArrayList selectEmployeeWorkHoursData(int clientnumber,String startdate,String enddate){
 		Connection conn=null;
+		Statement stmt=null;
+		ArrayList developerworkList=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement();
+	            ResultSet rs = stmt.executeQuery("select project_number,developer_name,billrate,sum(worked_hours) from developerhours where client_number="+clientnumber+" and STR_TO_DATE(work_date,'%d-%m-%Y') BETWEEN STR_TO_DATE('"+startdate+"', '%d-%m-%Y') AND STR_TO_DATE('"+enddate+"','%d-%m-%Y') group by project_number,developer_name,billrate");
+	    		if(rs!=null){
+	    			developerworkList=new ArrayList();
+	    			while(rs.next()){
+	    				DeveloperWork developerWork=new DeveloperWork();
+	    				developerWork.setProject_number(""+rs.getInt("project_number"));
+	    				developerWork.setDeveloper_name(rs.getString("developer_name"));
+	    				developerWork.setBillrate(rs.getString("billrate"));
+	    				developerWork.setSumofworked_hours(rs.getString("sum(worked_hours)"));
+	    				developerworkList.add(developerWork);
+	    			}
+	    		}
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}
+        return developerworkList;
+    }
+	
+	public ArrayList getProjectsFromEmployeeWorked(int clientnumber,String startdate,String enddate){
+		Connection conn=null;
+		Statement stmt=null;
+		ArrayList projectList=null;
+		try{
+			conn = getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement();
+	            ResultSet rs = stmt.executeQuery("select distinct project_number from developerhours where client_number="+clientnumber+" and STR_TO_DATE(work_date,'%d-%m-%Y') BETWEEN STR_TO_DATE('"+startdate+"', '%d-%m-%Y') AND STR_TO_DATE('"+enddate+"','%d-%m-%Y') group by project_number,developer_name,billrate");
+	    		if(rs!=null){
+	    			projectList=new ArrayList();
+	    			while(rs.next()){
+	    				projectList.add(""+rs.getInt("project_number"));
+	    			}
+	    		}
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}
+        return projectList;
+    }
+	
+	public Invoice createtodayinvoice(int clientnumber,String projectnumber,String invoicedate,String totalamount){
+		Connection conn=null;
+		Statement stmt=null;
+		Invoice invoice=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+				invoice=new Invoice();
+	            stmt = conn.createStatement();
+	            Random randomnumbers = new Random();
+	            invoice.setInvoicenumber(""+clientnumber+randomnumbers.nextInt(4));
+	            invoice.setClientnumber(""+clientnumber);
+	            invoice.setProjectnumber(projectnumber);
+	            invoice.setInvoicedate(invoicedate);
+	            invoice.setAmount(totalamount);
+	            String sql = "insert into client_invoices (invoice_number,client_number,project_number,invoice_generate_date,total_amount) values ("+invoice.getInvoicenumber()+","+clientnumber+","+projectnumber+",'"+invoicedate+"',"+totalamount+")";
+	            stmt.executeUpdate(sql);
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}
+        return invoice;
+	}
+	
+	public void generateInvoices(){
+		try{
+			ArrayList clientList=getClientsFromDevelopersHours();
+			if(clientList!=null && clientList.size()!=0){
+				SimpleDateFormat sdf=new SimpleDateFormat("dd-MM-yyyy");
+				Iterator iterator=clientList.iterator();
+				while(iterator.hasNext()){
+					Client client=(Client)iterator.next();
+					String lastInvoiceDate=getLastClientInvoice(client.getNumber());
+					Calendar pastcal=Calendar.getInstance();
+					if(lastInvoiceDate!=null && lastInvoiceDate.trim().length()!=0){
+						pastcal.setTime(sdf.parse(lastInvoiceDate));
+					}
+					if(client.getInvoiceFreq().equalsIgnoreCase("Weekly")){							
+						pastcal.add(pastcal.DATE, 7);
+						if(lastInvoiceDate!=null && lastInvoiceDate.trim().length()!=0 && sdf.format(pastcal.getTime()).equalsIgnoreCase(sdf.format(new Date()))){							
+							Calendar todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -3);
+							String enddate=sdf.format(todaycalendar.getTime());
+							todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -9);
+							String startdate=sdf.format(todaycalendar.getTime());
+							System.out.println("Weekly   			: "+startdate+"     to      "+enddate);
+							ArrayList list=selectEmployeeWorkHoursData(client.getNumber(),startdate,enddate);
+							ArrayList projectList=getProjectsFromEmployeeWorked(client.getNumber(),startdate,enddate);
+							if(list!=null && list.size()!=0){
+								if(projectList!=null && projectList.size()!=0){
+									for(int j=0;j<projectList.size();j++){
+										ArrayList templist=new ArrayList();
+										String projectnumber=(String)projectList.get(j);
+										int totalamount=0;
+										for(int i=0;i<list.size();i++){
+											DeveloperWork developerWork=(DeveloperWork)list.get(i);
+											if(developerWork.getProject_number().equalsIgnoreCase(projectnumber)){
+												totalamount=totalamount+(Integer.parseInt(developerWork.getBillrate())*Integer.parseInt(developerWork.getSumofworked_hours()));
+												templist.add(developerWork);
+											}											
+										}
+										Invoice invoice=createtodayinvoice(client.getNumber(), projectnumber, sdf.format(new Date()), ""+totalamount);
+										Project project=getProjectsByNumbers(invoice.getClientnumber(),invoice.getProjectnumber());
+										GeneratePDF generatepdf=new GeneratePDF(invoice.getClientnumber()+"_"+invoice.getProjectnumber()+".pdf",client,project,templist,invoice.getAmount(),invoice.getInvoicenumber(),startdate+" to "+enddate);
+									}									
+								}								
+							}
+						}else if(lastInvoiceDate==null){
+							Calendar todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -3);
+							String enddate=sdf.format(todaycalendar.getTime());
+							todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -9);
+							String startdate=sdf.format(todaycalendar.getTime());
+							System.out.println("Else Weekly   			: "+startdate+"     to      "+enddate);
+							ArrayList list=selectEmployeeWorkHoursData(client.getNumber(),startdate,enddate);
+							ArrayList projectList=getProjectsFromEmployeeWorked(client.getNumber(),startdate,enddate);
+							if(list!=null && list.size()!=0){
+								if(projectList!=null && projectList.size()!=0){
+									for(int j=0;j<projectList.size();j++){
+										ArrayList templist=new ArrayList();
+										String projectnumber=(String)projectList.get(j);
+										int totalamount=0;
+										for(int i=0;i<list.size();i++){
+											DeveloperWork developerWork=(DeveloperWork)list.get(i);
+											if(developerWork.getProject_number().equalsIgnoreCase(projectnumber)){
+												totalamount=totalamount+(Integer.parseInt(developerWork.getBillrate())*Integer.parseInt(developerWork.getSumofworked_hours()));
+												templist.add(developerWork);
+											}											
+										}
+										Invoice invoice=createtodayinvoice(client.getNumber(), projectnumber, sdf.format(new Date()), ""+totalamount);
+										Project project=getProjectsByNumbers(invoice.getClientnumber(),invoice.getProjectnumber());
+										GeneratePDF generatepdf=new GeneratePDF(invoice.getClientnumber()+"_"+invoice.getProjectnumber()+".pdf",client,project,templist,invoice.getAmount(),invoice.getInvoicenumber(),startdate+" to "+enddate);
+									}									
+								}								
+							}
+						}
+					}else if(client.getInvoiceFreq().equalsIgnoreCase("BiWeekly")){
+						pastcal.add(pastcal.DATE, 14);
+						if(lastInvoiceDate!=null && lastInvoiceDate.trim().length()!=0 && sdf.format(pastcal.getTime()).equalsIgnoreCase(sdf.format(new Date()))){	
+							Calendar todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -3);
+							String enddate=sdf.format(todaycalendar.getTime());
+							todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -16);
+							String startdate=sdf.format(todaycalendar.getTime());
+							System.out.println("BiWeekly   			: "+startdate+"     to      "+enddate);
+							ArrayList list=selectEmployeeWorkHoursData(client.getNumber(),startdate,enddate);
+							ArrayList projectList=getProjectsFromEmployeeWorked(client.getNumber(),startdate,enddate);
+							if(list!=null && list.size()!=0){
+								if(projectList!=null && projectList.size()!=0){
+									for(int j=0;j<projectList.size();j++){
+										ArrayList templist=new ArrayList();
+										String projectnumber=(String)projectList.get(j);
+										int totalamount=0;
+										for(int i=0;i<list.size();i++){
+											DeveloperWork developerWork=(DeveloperWork)list.get(i);
+											if(developerWork.getProject_number().equalsIgnoreCase(projectnumber)){
+												totalamount=totalamount+(Integer.parseInt(developerWork.getBillrate())*Integer.parseInt(developerWork.getSumofworked_hours()));
+												templist.add(developerWork);
+											}											
+										}
+										Invoice invoice=createtodayinvoice(client.getNumber(), projectnumber, sdf.format(new Date()), ""+totalamount);
+										Project project=getProjectsByNumbers(invoice.getClientnumber(),invoice.getProjectnumber());
+										GeneratePDF generatepdf=new GeneratePDF(invoice.getClientnumber()+"_"+invoice.getProjectnumber()+".pdf",client,project,templist,invoice.getAmount(),invoice.getInvoicenumber(),startdate+" to "+enddate);
+									}									
+								}								
+							}
+						}else if(lastInvoiceDate==null){
+							Calendar todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -3);
+							String enddate=sdf.format(todaycalendar.getTime());
+							todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -16);
+							String startdate=sdf.format(todaycalendar.getTime());
+							System.out.println("Else BiWeekly   			: "+startdate+"     to      "+enddate);
+							ArrayList list=selectEmployeeWorkHoursData(client.getNumber(),startdate,enddate);
+							ArrayList projectList=getProjectsFromEmployeeWorked(client.getNumber(),startdate,enddate);
+							if(list!=null && list.size()!=0){
+								if(projectList!=null && projectList.size()!=0){
+									for(int j=0;j<projectList.size();j++){
+										ArrayList templist=new ArrayList();
+										String projectnumber=(String)projectList.get(j);
+										int totalamount=0;
+										for(int i=0;i<list.size();i++){
+											DeveloperWork developerWork=(DeveloperWork)list.get(i);
+											if(developerWork.getProject_number().equalsIgnoreCase(projectnumber)){
+												totalamount=totalamount+(Integer.parseInt(developerWork.getBillrate())*Integer.parseInt(developerWork.getSumofworked_hours()));
+												templist.add(developerWork);
+											}											
+										}
+										Invoice invoice=createtodayinvoice(client.getNumber(), projectnumber, sdf.format(new Date()), ""+totalamount);
+										Project project=getProjectsByNumbers(invoice.getClientnumber(),invoice.getProjectnumber());
+										GeneratePDF generatepdf=new GeneratePDF(invoice.getClientnumber()+"_"+invoice.getProjectnumber()+".pdf",client,project,templist,invoice.getAmount(),invoice.getInvoicenumber(),startdate+" to "+enddate);
+									}									
+								}								
+							}
+						}
+					}else if(client.getInvoiceFreq().equalsIgnoreCase("Monthly")){
+						pastcal.add(pastcal.DATE, 30);
+						if(lastInvoiceDate!=null && lastInvoiceDate.trim().length()!=0 && sdf.format(pastcal.getTime()).equalsIgnoreCase(sdf.format(new Date()))){	
+							Calendar todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -3);
+							String enddate=sdf.format(todaycalendar.getTime());
+							todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -32);
+							String startdate=sdf.format(todaycalendar.getTime());
+							System.out.println("Monthly   			: "+startdate+"     to      "+enddate);
+							ArrayList list=selectEmployeeWorkHoursData(client.getNumber(),startdate,enddate);
+							ArrayList projectList=getProjectsFromEmployeeWorked(client.getNumber(),startdate,enddate);
+							if(list!=null && list.size()!=0){
+								if(projectList!=null && projectList.size()!=0){
+									for(int j=0;j<projectList.size();j++){
+										ArrayList templist=new ArrayList();
+										String projectnumber=(String)projectList.get(j);
+										int totalamount=0;
+										for(int i=0;i<list.size();i++){
+											DeveloperWork developerWork=(DeveloperWork)list.get(i);
+											if(developerWork.getProject_number().equalsIgnoreCase(projectnumber)){
+												totalamount=totalamount+(Integer.parseInt(developerWork.getBillrate())*Integer.parseInt(developerWork.getSumofworked_hours()));
+												templist.add(developerWork);
+											}											
+										}
+										Invoice invoice=createtodayinvoice(client.getNumber(), projectnumber, sdf.format(new Date()), ""+totalamount);
+										Project project=getProjectsByNumbers(invoice.getClientnumber(),invoice.getProjectnumber());
+										GeneratePDF generatepdf=new GeneratePDF(invoice.getClientnumber()+"_"+invoice.getProjectnumber()+".pdf",client,project,templist,invoice.getAmount(),invoice.getInvoicenumber(),startdate+" to "+enddate);
+									}									
+								}								
+							}
+						}else if(lastInvoiceDate==null){
+							Calendar todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -3);
+							String enddate=sdf.format(todaycalendar.getTime());
+							todaycalendar = Calendar.getInstance();
+							todaycalendar.add(todaycalendar.DATE, -32);
+							String startdate=sdf.format(todaycalendar.getTime());
+							System.out.println("Else Monthly   			: "+startdate+"     to      "+enddate);
+							ArrayList list=selectEmployeeWorkHoursData(client.getNumber(),startdate,enddate);
+							ArrayList projectList=getProjectsFromEmployeeWorked(client.getNumber(),startdate,enddate);
+							if(list!=null && list.size()!=0){
+								if(projectList!=null && projectList.size()!=0){
+									for(int j=0;j<projectList.size();j++){
+										ArrayList templist=new ArrayList();
+										String projectnumber=(String)projectList.get(j);
+										int totalamount=0;
+										for(int i=0;i<list.size();i++){
+											DeveloperWork developerWork=(DeveloperWork)list.get(i);
+											if(developerWork.getProject_number().equalsIgnoreCase(projectnumber)){
+												totalamount=totalamount+(Integer.parseInt(developerWork.getBillrate())*Integer.parseInt(developerWork.getSumofworked_hours()));
+												templist.add(developerWork);
+											}											
+										}
+										Invoice invoice=createtodayinvoice(client.getNumber(), projectnumber, sdf.format(new Date()), ""+totalamount);
+										Project project=getProjectsByNumbers(invoice.getClientnumber(),invoice.getProjectnumber());
+										GeneratePDF generatepdf=new GeneratePDF(invoice.getClientnumber()+"_"+invoice.getProjectnumber()+".pdf",client,project,templist,invoice.getAmount(),invoice.getInvoicenumber(),startdate+" to "+enddate);
+									}									
+								}								
+							}
+						}
+					}else{
+						if(lastInvoiceDate==null){
+							SimpleDateFormat tempsimpledateformat=new SimpleDateFormat("MM");
+    						SimpleDateFormat tempsimpledateformat1=new SimpleDateFormat("yyyy");
+    						Calendar todaycalendar=Calendar.getInstance();
+    						todaycalendar.add(todaycalendar.MONTH, -1);
+    						int month=Integer.parseInt(tempsimpledateformat1.format(todaycalendar.getTime()));
+    						String enddate="";
+    						if(month==2 && (Integer.parseInt(tempsimpledateformat.format(todaycalendar.getTime())))%4==0){
+    							enddate="29-"+tempsimpledateformat1.format(todaycalendar.getTime())+"-"+tempsimpledateformat.format(todaycalendar.getTime());
+    						}else if(month==2 && (Integer.parseInt(tempsimpledateformat.format(todaycalendar.getTime())))%4!=0){
+    							enddate="28-"+tempsimpledateformat1.format(todaycalendar.getTime())+"-"+tempsimpledateformat.format(todaycalendar.getTime());
+    						}else if(month==4 || month==6 || month==9 || month==9){
+    							enddate="30-"+tempsimpledateformat1.format(todaycalendar.getTime())+"-"+tempsimpledateformat.format(todaycalendar.getTime());
+    						}else{
+    							enddate="31-"+tempsimpledateformat1.format(todaycalendar.getTime())+"-"+tempsimpledateformat.format(todaycalendar.getTime());
+    						}
+    						String startdate="01-"+tempsimpledateformat1.format(todaycalendar.getTime())+"-"+tempsimpledateformat.format(todaycalendar.getTime());
+							System.out.println("Monthly  cal 			: "+startdate+"     to      "+enddate);
+							ArrayList list=selectEmployeeWorkHoursData(client.getNumber(),startdate,enddate);
+							ArrayList projectList=getProjectsFromEmployeeWorked(client.getNumber(),startdate,enddate);
+							if(list!=null && list.size()!=0){
+								if(projectList!=null && projectList.size()!=0){
+									for(int j=0;j<projectList.size();j++){
+										ArrayList templist=new ArrayList();
+										String projectnumber=(String)projectList.get(j);
+										int totalamount=0;
+										for(int i=0;i<list.size();i++){
+											DeveloperWork developerWork=(DeveloperWork)list.get(i);
+											if(developerWork.getProject_number().equalsIgnoreCase(projectnumber)){
+												totalamount=totalamount+(Integer.parseInt(developerWork.getBillrate())*Integer.parseInt(developerWork.getSumofworked_hours()));
+												templist.add(developerWork);
+											}											
+										}
+										Invoice invoice=createtodayinvoice(client.getNumber(), projectnumber, sdf.format(new Date()), ""+totalamount);
+										Project project=getProjectsByNumbers(invoice.getClientnumber(),invoice.getProjectnumber());
+										GeneratePDF generatepdf=new GeneratePDF(invoice.getClientnumber()+"_"+invoice.getProjectnumber()+".pdf",client,project,templist,invoice.getAmount(),invoice.getInvoicenumber(),startdate+" to "+enddate);
+									}									
+								}								
+							}
+						}else{
+							for(int monthvalue=Calendar.JANUARY;monthvalue<=Calendar.DECEMBER;monthvalue++){
+	    					    GregorianCalendar gregorianCalendar = new GregorianCalendar(2016,monthvalue,1);
+	    					    gregorianCalendar.set(Calendar.DAY_OF_WEEK_IN_MONTH, 1);
+	    					    gregorianCalendar.set(Calendar.DAY_OF_WEEK, Calendar.WEDNESDAY);
+	    					    if(sdf.format(gregorianCalendar.getTime()).equalsIgnoreCase(sdf.format(new Date()))){
+	    					    	SimpleDateFormat secondsimpledateformat=new SimpleDateFormat("MM");
+		    						SimpleDateFormat firstsimpledateformat=new SimpleDateFormat("yyyy");
+		    						Calendar calendar = Calendar.getInstance();
+		    						calendar.add(calendar.MONTH, -1);
+		    						int month=Integer.parseInt(secondsimpledateformat.format(calendar.getTime()));
+		    						String enddate="";
+		    						if(month==2 && (Integer.parseInt(firstsimpledateformat.format(calendar.getTime())))%4==0){
+		    							enddate="29-"+secondsimpledateformat.format(calendar.getTime())+"-"+firstsimpledateformat.format(calendar.getTime());
+		    						}else if(month==2 && (Integer.parseInt(firstsimpledateformat.format(calendar.getTime())))%4!=0){
+		    							enddate="28-"+secondsimpledateformat.format(calendar.getTime())+"-"+firstsimpledateformat.format(calendar.getTime());
+		    						}else if(month==4 || month==6 || month==9 || month==9){
+		    							enddate="30-"+secondsimpledateformat.format(calendar.getTime())+"-"+firstsimpledateformat.format(calendar.getTime());
+		    						}else{
+		    							enddate="31-"+secondsimpledateformat.format(calendar.getTime())+"-"+firstsimpledateformat.format(calendar.getTime());
+		    						}
+		    						String startdate="01-"+secondsimpledateformat.format(calendar.getTime())+"-"+firstsimpledateformat.format(calendar.getTime());
+		    						System.out.println("Monthly  cal 			: "+startdate+"     to      "+enddate);
+									ArrayList list=selectEmployeeWorkHoursData(client.getNumber(),startdate,enddate);
+									ArrayList projectList=getProjectsFromEmployeeWorked(client.getNumber(),startdate,enddate);
+									if(list!=null && list.size()!=0){
+										if(projectList!=null && projectList.size()!=0){
+											for(int j=0;j<projectList.size();j++){
+												ArrayList templist=new ArrayList();
+												String projectnumber=(String)projectList.get(j);
+												int totalamount=0;
+												for(int i=0;i<list.size();i++){
+													DeveloperWork developerWork=(DeveloperWork)list.get(i);
+													if(developerWork.getProject_number().equalsIgnoreCase(projectnumber)){
+														totalamount=totalamount+(Integer.parseInt(developerWork.getBillrate())*Integer.parseInt(developerWork.getSumofworked_hours()));
+														templist.add(developerWork);
+													}											
+												}
+												Invoice invoice=createtodayinvoice(client.getNumber(), projectnumber, sdf.format(new Date()), ""+totalamount);
+												Project project=getProjectsByNumbers(invoice.getClientnumber(),invoice.getProjectnumber());
+												GeneratePDF generatepdf=new GeneratePDF(invoice.getClientnumber()+"_"+invoice.getProjectnumber()+".pdf",client,project,templist,invoice.getAmount(),invoice.getInvoicenumber(),startdate+" to "+enddate);
+											}									
+										}								
+									}
+	    					    }
+	    					}
+						}
+					}
+				}
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		
+		/*Connection conn=null;
 		Statement stmt=null;
 		ArrayList invoicelist=null;
 		try{
@@ -601,7 +1113,83 @@ public class MyDatabaseHelper {
 		         e.printStackTrace();
 		      }
 		}
-        return invoicelist;
+        return invoicelist;*/
+    }
+	
+	public String getLastClientInvoice(int clientnumber){
+		Connection conn=null;
+		Statement stmt=null;
+		String lastInvoiceDate=null;
+		try{
+			conn = getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement();
+	            ResultSet rs = stmt.executeQuery("select max(invoice_generate_date) from client_invoices where client_number="+clientnumber);
+	    		if(rs!=null){
+	    			while(rs.next()){
+	    				lastInvoiceDate=rs.getString("max(invoice_generate_date)");
+	    			}
+	    		}
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}
+        return lastInvoiceDate;
+    }
+	
+	public ArrayList getClientsFromDevelopersHours(){
+		Connection conn=null;
+		Statement stmt=null;
+		ArrayList clientList=null;
+		try{
+			conn =getNonPooledConnection();
+			if(conn!=null){
+	            stmt = conn.createStatement();
+	            ResultSet rs = stmt.executeQuery("select * from clients where client_number in (select distinct client_number from developerhours)");
+	    		if(rs!=null){
+	    			clientList=new ArrayList();
+	    			while(rs.next()){
+	    				Client client=new Client();
+	    				client.setNumber(rs.getInt("client_number"));
+	    				client.setName(rs.getString("client_name"));
+	    				client.setAddressline1(rs.getString("address_line1"));
+	    				client.setAddressline2(rs.getString("address_line2"));
+	    				client.setCity(rs.getString("city"));
+	    				client.setState(rs.getString("state"));
+	    				client.setZip(""+rs.getInt("zip"));
+	    				client.setEmail(rs.getString("email"));
+	    				client.setContact(rs.getString("contact_person"));
+	    				client.setInvoiceFreq(rs.getString("invoice_frequency"));
+	    				client.setBillingTerms(rs.getString("billing_terms"));
+	    				client.setInvoiceGrouping(rs.getString("invoice_grouping"));
+	    				clientList.add(client);
+	    			}
+	    		}
+			}
+        }catch(SQLException err){
+        	err.printStackTrace();
+        }finally{
+		     try{
+		    	 if(stmt!=null){
+			    	 stmt.close();
+			     }
+		         if(conn!=null)
+		            conn.close();
+		      }catch(Exception e){
+		         e.printStackTrace();
+		      }
+		}
+        return clientList;
     }
 	
 	public void insertClient(String clientnumber,String clientname,String addressline1,String addressline2,String city,String state,String zip,String email,String contactperson,String invoicefrequency,String billingterms,String invoicegrouping){
